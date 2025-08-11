@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "notes": "Initial Windows release",
+  "windows_installer_url": "REPLACE_ME_AFTER_RELEASE",
+  "windows_sha256": "REPLACE_ME_AFTER_RELEASE"
+}
