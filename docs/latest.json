@@ -1,6 +1,7 @@
 {
   "version": "1.0.0",
   "notes": "Initial Windows release",
-  "windows_installer_url": "REPLACE_ME_AFTER_RELEASE",
-  "windows_sha256": "REPLACE_ME_AFTER_RELEASE"
+  "windows_installer_url": "https://github.com/JLVDV94/nuform-invoicer/releases/download/v1.0.0/mysetup.exe",
+  "windows_sha256": "bce9fc9ac141100a46fb7106a7b41d08baff95b1bc6485a065e11224f721eb71"
 }
+
