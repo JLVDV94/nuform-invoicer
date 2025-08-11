@@ -1,0 +1,96 @@
+name: Build macOS app + DMG
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g. v1.0.0)"
+        required: true
+      app_version:
+        description: "App version in app.py (e.g. 1.0.0)"
+        required: true
+
+permissions:
+  contents: write   # needed to upload release assets
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller fpdf pandas openpyxl tkcalendar
+
+      - name: Verify app version matches input (optional)
+        run: |
+          echo "Expecting __version__='${{ github.event.inputs.app_version }}'"
+          python - << 'PY'
+          import re,sys
+          txt=open('app.py','r',encoding='utf-8').read()
+          m=re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]",txt)
+          ver=m.group(1) if m else ''
+          print('Found:',ver)
+          sys.exit(0 if ver== '${{ github.event.inputs.app_version }}' else 1)
+          PY
+
+      - name: Build .app with PyInstaller
+        run: |
+          pyinstaller --windowed --noconfirm --name "NuForm Invoicer" app.py
+          ls -la "dist"
+
+      - name: Create DMG
+        run: |
+          mkdir -p release/nuform_dmg
+          cp -R "dist/NuForm Invoicer.app" "release/nuform_dmg/"
+          ln -s /Applications "release/nuform_dmg/Applications"
+          hdiutil create \
+            -volname "NuForm Invoicer" \
+            -srcfolder "release/nuform_dmg" \
+            -ov -format UDZO \
+            "release/NuFormInvoicer-${{ github.event.inputs.app_version }}.dmg"
+          ls -la release
+
+      - name: Compute SHA-256
+        id: sha
+        run: |
+          HASH=$(shasum -a 256 "release/NuFormInvoicer-${{ github.event.inputs.app_version }}.dmg" | awk '{print $1}')
+          echo "sha256=$HASH" >> $GITHUB_OUTPUT
+          echo "SHA256 = $HASH"
+
+      - name: Upload DMG as workflow artifact (for convenience)
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuFormInvoicer-mac-${{ github.event.inputs.app_version }}
+          path: release/NuFormInvoicer-${{ github.event.inputs.app_version }}.dmg
+
+      - name: Attach DMG to GitHub Release (creates if missing)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: ${{ github.event.inputs.app_version }}
+          draft: false
+          prerelease: false
+          files: release/NuFormInvoicer-${{ github.event.inputs.app_version }}.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print JSON snippet for latest.json
+        run: |
+          echo '--- Paste this into docs/latest.json ---'
+          echo '{'
+          echo '  "version": "'${{ github.event.inputs.app_version }}'",'
+          echo '  "notes": "Update notes here",'
+          echo '  "windows_installer_url": "KEEP_YOUR_EXISTING_URL",'
+          echo '  "windows_sha256": "KEEP_YOUR_EXISTING_HASH",'
+          echo '  "macos_dmg_url": "https://github.com/'"${{ github.repository }}"'/releases/download/'"${{ github.event.inputs.version }}"'/NuFormInvoicer-'${{ github.event.inputs.app_version }}'.dmg",'
+          echo '  "macos_sha256": "'${{ steps.sha.outputs.sha256 }}'"'
+          echo '}'
