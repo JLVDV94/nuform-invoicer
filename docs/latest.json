@@ -4,6 +4,6 @@
   "windows_installer_url": "https://github.com/JLVDV94/nuform-invoicer/releases/download/v1.0.0/mysetup.exe",
   "windows_sha256": "bce9fc9ac141100a46fb7106a7b41d08baff95b1bc6485a065e11224f721eb71"
   "macos_dmg_url": "https://github.com/JLVDV94/nuform-invoicer/releases/download/v1.0.0/NuFormInvoicer-1.0.0.dmg",
-  "macos_sha256": "SHA256_FROM_WORKFLOW"
+  "macos_sha256": "097c6128a6b7adb050e771ae7ca22f1aeb226836ad9ff46dfafb48651b7e8286"
   }
 
